@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda de citas</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --background: #f1f5f9;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #dc2626;
+      --success: #15803d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header { padding: 32px 0 22px; }
+    h1, h2, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font-size: clamp(1.8rem, 4vw, 2.5rem); }
+    h2 { margin-bottom: 18px; font-size: 1.2rem; }
+    .subtitle { margin-bottom: 0; color: var(--muted); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      padding-bottom: 40px;
+    }
+
+    .panel, .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+    }
+
+    .panel { padding: 20px; align-self: start; }
+    .card { min-height: 420px; padding: 24px; }
+
+    label { display: block; margin-bottom: 7px; font-size: .9rem; font-weight: 700; }
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 11px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 13px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:focus-visible, input:focus-visible { outline: 3px solid rgba(37, 99, 235, .3); outline-offset: 2px; }
+    .primary { width: 100%; margin-top: 12px; background: var(--primary); color: white; }
+    .primary:hover { background: var(--primary-dark); }
+    .secondary { background: #e2e8f0; color: var(--text); }
+    .danger { background: #fee2e2; color: var(--danger); }
+
+    .list-buttons { display: grid; gap: 8px; margin-top: 22px; }
+    .list-button {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      background: #f8fafc;
+      color: var(--text);
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .list-button.active { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+    .list-button-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .list-count { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 18px;
+    }
+
+    .card-header h2 { margin-bottom: 5px; }
+    .card-header p { margin-bottom: 0; color: var(--muted); font-size: .9rem; }
+    .items { display: grid; gap: 10px; }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 13px 14px;
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-weight: 400;
+      cursor: pointer;
+    }
+    .item:hover { background: #f8fafc; }
+    .item input { width: 18px; height: 18px; accent-color: var(--success); cursor: pointer; }
+    .empty { padding: 45px 12px; color: var(--muted); text-align: center; }
+
+    .add-item { display: flex; gap: 9px; margin-bottom: 18px; }
+    .add-item input { flex: 1; }
+    .add-item button { background: var(--primary); color: white; }
+    .add-item button:hover { background: var(--primary-dark); }
+
+    .delete-list { font-size: .8rem; margin-top: 18px; }
+    .delete-list button { width: 100%; }
+    .hint { margin-top: 14px; color: var(--muted); font-size: .78rem; line-height: 1.4; }
+
+    .appointments-section {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+      padding: 24px;
+    }
+
+    .appointments-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+    .appointments-header h2 { margin-bottom: 5px; }
+    .appointments-header p { margin-bottom: 0; color: var(--muted); font-size: .9rem; }
+    .appointment-form { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 20px; }
+    .appointment-form label { margin-bottom: 0; }
+    .appointment-form input { margin-top: 7px; }
+    .appointment-form button { height: 42px; background: var(--primary); color: white; }
+    .appointment-form button:hover { background: var(--primary-dark); }
+    .cancel-edit { display: none; background: #e2e8f0 !important; color: var(--text) !important; }
+    .cancel-edit.visible { display: block; }
+    .appointment-alert { display: none; margin-bottom: 18px; padding: 13px 15px; border: 1px solid #f59e0b; border-radius: 10px; background: #fffbeb; color: #92400e; line-height: 1.45; }
+    .appointment-alert.visible { display: block; }
+    .firebase-status { display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 999px; background: #e2e8f0; color: #475569; font-size: .82rem; font-weight: 700; }
+    .firebase-status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .firebase-status.connected { background: #dcfce7; color: #15803d; }
+    .firebase-status.error { background: #fee2e2; color: #b91c1c; }
+    .appointments-table-wrap { overflow-x: auto; }
+    .appointments-table { width: 100%; border-collapse: collapse; min-width: 950px; }
+    .appointments-table th, .appointments-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: middle; }
+    .appointments-table th { color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .03em; }
+    .appointment-actions { display: flex; gap: 7px; }
+    .appointment-actions button { padding: 7px 9px; font-size: .82rem; }
+    .empty-table { padding: 28px 10px; color: var(--muted); text-align: center; }
+    .daily-appointments { width: min(1100px, calc(100% - 32px)); margin: 0 auto 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 24px rgba(15, 23, 42, .06); padding: 24px; }
+    .daily-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .daily-toolbar h2 { margin-bottom: 5px; }
+    .daily-toolbar p { margin-bottom: 0; color: var(--muted); font-size: .9rem; }
+    .daily-date { min-width: 180px; }
+    .daily-date input { width: 100%; margin-top: 7px; border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; font: inherit; }
+    .daily-list { display: grid; gap: 10px; }
+    .daily-card { display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 11px; background: #f8fafc; }
+    .daily-time { color: var(--primary-dark); font-weight: 800; font-size: 1.05rem; }
+    .daily-patient { font-weight: 800; }
+    .daily-phone, .daily-location { margin-top: 3px; color: var(--muted); font-size: .9rem; }
+    .whatsapp-button { display: inline-flex; align-items: center; gap: 5px; background: #dcfce7; color: #166534; text-decoration: none; padding: 7px 9px; border-radius: 9px; font-size: .82rem; font-weight: 700; }
+    .whatsapp-button svg { width: 15px; height: 15px; fill: currentColor; }
+    .history-button { background: #ede9fe; color: #5b21b6; }
+    .modal-backdrop { display: none; position: fixed; inset: 0; z-index: 20; padding: 20px; background: rgba(15, 23, 42, .55); align-items: center; justify-content: center; }
+    .modal-backdrop.visible { display: flex; }
+    .modal { width: min(700px, 100%); max-height: min(760px, 92vh); overflow: auto; background: var(--surface); border-radius: 16px; padding: 24px; box-shadow: 0 22px 60px rgba(15, 23, 42, .28); }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
+    .modal-head h2 { margin-bottom: 5px; }
+    .modal-head p { color: var(--muted); margin-bottom: 0; }
+    .close-modal { background: #e2e8f0; color: var(--text); padding: 8px 11px; }
+    .history-form { display: grid; gap: 12px; padding: 16px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; }
+    .history-form select, .history-form textarea { width: 100%; margin-top: 7px; border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; font: inherit; }
+    .history-form textarea { min-height: 92px; resize: vertical; }
+    .history-meta { color: var(--muted); font-size: .86rem; }
+    .history-form button { justify-self: start; background: var(--primary); color: white; }
+    .history-list { display: grid; gap: 10px; margin-top: 20px; }
+    .history-entry { border-left: 4px solid #8b5cf6; padding: 11px 13px; border-radius: 0 10px 10px 0; background: #fafafa; }
+    .history-entry strong { display: block; margin-bottom: 4px; }
+    .history-entry p { margin: 6px 0 0; white-space: pre-wrap; line-height: 1.45; }
+
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel { align-self: stretch; }
+      .add-item { flex-direction: column; }
+      .card-header { flex-direction: column; }
+      .appointments-header { flex-direction: column; }
+      .appointment-form { grid-template-columns: 1fr 1fr; }
+      .appointment-form .full-mobile { grid-column: 1 / -1; }
+      .daily-toolbar { align-items: stretch; flex-direction: column; }
+      .daily-card { grid-template-columns: 1fr; gap: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="appointments-section">
+    <div class="appointments-header">
+      <div>
+        <h2>Agenda de citas</h2>
+        <p>Administra las citas de los pacientes y recibe avisos un día antes.</p>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+        <span id="firebaseStatus" class="firebase-status">Conectando Firebase</span>
+        <button id="notificationButton" class="secondary" type="button">Activar avisos</button>
+      </div>
+    </div>
+
+    <div id="appointmentAlert" class="appointment-alert" role="status"></div>
+
+    <form id="appointmentForm" class="appointment-form">
+      <label class="full-mobile">Paciente
+        <input id="patientName" type="text" maxlength="100" placeholder="Nombre del paciente" required>
+      </label>
+      <label>Fecha
+        <input id="appointmentDate" type="date" required>
+      </label>
+      <label>Horario
+        <input id="appointmentTime" type="time" required>
+      </label>
+      <label>Teléfono
+        <input id="patientPhone" type="tel" maxlength="25" placeholder="Teléfono" required>
+      </label>
+      <label>Doctor(a)
+        <input id="appointmentDoctor" type="text" maxlength="100" placeholder="Nombre del doctor" required>
+      </label>
+      <label>Consultorio
+        <input id="appointmentOffice" type="text" maxlength="60" placeholder="Ej. Consultorio 2" required>
+      </label>
+      <button id="appointmentSubmit" type="submit">Guardar cita</button>
+      <button id="cancelEdit" class="cancel-edit" type="button">Cancelar</button>
+    </form>
+
+    <div class="appointments-table-wrap">
+      <table class="appointments-table">
+        <thead>
+          <tr><th>Paciente</th><th>Fecha</th><th>Horario</th><th>Teléfono</th><th>Doctor(a)</th><th>Consultorio</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="appointmentsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="daily-appointments">
+    <div class="daily-toolbar">
+      <div>
+        <h2>Citas por día</h2>
+        <p id="dailyAppointmentSummary">Selecciona una fecha para ver a todos los pacientes citados.</p>
+      </div>
+      <label class="daily-date" for="dailyDate">Fecha
+        <input id="dailyDate" type="date">
+      </label>
+    </div>
+    <div id="dailyAppointmentsList" class="daily-list"></div>
+  </section>
+
+  <div id="historyModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <section class="modal">
+      <div class="modal-head">
+        <div>
+          <h2 id="historyTitle">Historial del paciente</h2>
+          <p id="historyPatient"></p>
+        </div>
+        <button id="closeHistory" class="close-modal" type="button">Cerrar</button>
+      </div>
+
+      <form id="historyForm" class="history-form">
+        <div class="history-meta" id="historyDateTime"></div>
+        <label for="historyType">Tipo de registro
+          <select id="historyType">
+            <option value="Llamada">Llamada</option>
+            <option value="Cita">Cita</option>
+          </select>
+        </label>
+        <label for="historyText">Descripción y acción realizada
+          <textarea id="historyText" maxlength="1000" placeholder="Ej. Se llamó para confirmar asistencia; paciente confirma la cita." required></textarea>
+        </label>
+        <button type="submit">Guardar en historial</button>
+      </form>
+
+      <div id="historyList" class="history-list"></div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxf1vKpw4CVG8uQLbGsc-CGQ39SKVsVKY",
+      authDomain: "isela-gomez.firebaseapp.com",
+      projectId: "isela-gomez",
+      storageBucket: "isela-gomez.firebasestorage.app",
+      messagingSenderId: "220149734064",
+      appId: "1:220149734064:web:15dc8aedd357956b1bb975"
+    };
+    const APPOINTMENTS_KEY = "citas_pacientes_v1";
+    let appointments = loadAppointments();
+    let editingAppointmentId = null;
+    let historyAppointmentId = null;
+
+    const appointmentForm = document.getElementById("appointmentForm");
+    const patientName = document.getElementById("patientName");
+    const appointmentDate = document.getElementById("appointmentDate");
+    const appointmentTime = document.getElementById("appointmentTime");
+    const patientPhone = document.getElementById("patientPhone");
+    const appointmentDoctor = document.getElementById("appointmentDoctor");
+    const appointmentOffice = document.getElementById("appointmentOffice");
+    const appointmentSubmit = document.getElementById("appointmentSubmit");
+    const cancelEdit = document.getElementById("cancelEdit");
+    const appointmentsBody = document.getElementById("appointmentsBody");
+    const appointmentAlert = document.getElementById("appointmentAlert");
+    const notificationButton = document.getElementById("notificationButton");
+    const firebaseStatus = document.getElementById("firebaseStatus");
+    const historyModal = document.getElementById("historyModal");
+    const closeHistory = document.getElementById("closeHistory");
+    const historyPatient = document.getElementById("historyPatient");
+    const historyForm = document.getElementById("historyForm");
+    const historyType = document.getElementById("historyType");
+    const historyText = document.getElementById("historyText");
+    const historyDateTime = document.getElementById("historyDateTime");
+    const historyList = document.getElementById("historyList");
+    const dailyDate = document.getElementById("dailyDate");
+    const dailyAppointmentSummary = document.getElementById("dailyAppointmentSummary");
+    const dailyAppointmentsList = document.getElementById("dailyAppointmentsList");
+
+    function createId() {
+      return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    function loadAppointments() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(APPOINTMENTS_KEY));
+        return Array.isArray(saved) ? saved : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveAppointments() {
+      localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointments));
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[character]));
+    }
+
+    function render() {
+      renderAppointments();
+      renderDailyAppointments();
+      checkAppointmentAlerts();
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(`${dateString}T00:00:00`);
+      return date.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
+    }
+
+    function appointmentDateTime(appointment) {
+      return new Date(`${appointment.date}T${appointment.time || "00:00"}`);
+    }
+
+    function whatsappNumber(phone) {
+      const digits = String(phone || "").replace(/\D/g, "");
+      return digits.length === 10 ? `52${digits}` : digits;
+    }
+
+    function todayKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    }
+
+    function showFirebaseStatus(message, type = "") {
+      firebaseStatus.textContent = message;
+      firebaseStatus.className = `firebase-status ${type}`.trim();
+    }
+
+    async function connectFirebase() {
+      try {
+        showFirebaseStatus("Conectando Firebase");
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        if (!auth.currentUser) await signInAnonymously(auth);
+        await getDoc(doc(db, "configuracion", "estadoConexion"));
+        showFirebaseStatus("Firebase conectado", "connected");
+      } catch (error) {
+        console.error("No se pudo conectar con Firebase:", error);
+        showFirebaseStatus("Firebase sin conexión", "error");
+      }
+    }
+
+    function renderDailyAppointments() {
+      const selectedDate = dailyDate.value || todayKey();
+      if (!dailyDate.value) dailyDate.value = selectedDate;
+      const selected = appointments
+        .filter(appointment => appointment.date === selectedDate)
+        .sort((a, b) => String(a.time).localeCompare(String(b.time)));
+      dailyAppointmentSummary.textContent = selected.length
+        ? `${selected.length} paciente${selected.length === 1 ? "" : "s"} citado${selected.length === 1 ? "" : "s"} el ${formatDate(selectedDate)}.`
+        : `No hay pacientes citados el ${formatDate(selectedDate)}.`;
+      dailyAppointmentsList.innerHTML = selected.length ? selected.map(appointment => `
+        <article class="daily-card">
+          <div class="daily-time">${escapeHtml(appointment.time)}</div>
+          <div><div class="daily-patient">${escapeHtml(appointment.patient)}</div><div class="daily-phone">Teléfono: ${escapeHtml(appointment.phone)}</div><div class="daily-location">Doctor(a): ${escapeHtml(appointment.doctor || "Sin asignar")} · ${escapeHtml(appointment.office || "Sin consultorio")}</div></div>
+          <a class="whatsapp-button" href="https://wa.me/${whatsappNumber(appointment.phone)}" target="_blank" rel="noopener">WhatsApp</a>
+        </article>
+      `).join("") : `<div class="empty-table">No existen citas para la fecha seleccionada.</div>`;
+    }
+
+    function renderAppointments() {
+      const sorted = [...appointments].sort((a, b) => appointmentDateTime(a) - appointmentDateTime(b));
+      if (!sorted.length) {
+        appointmentsBody.innerHTML = `<tr><td class="empty-table" colspan="7">No hay citas registradas.</td></tr>`;
+        return;
+      }
+
+      appointmentsBody.innerHTML = sorted.map(appointment => `
+        <tr>
+          <td><strong>${escapeHtml(appointment.patient)}</strong></td>
+          <td>${formatDate(appointment.date)}</td>
+          <td>${escapeHtml(appointment.time)}</td>
+          <td>${escapeHtml(appointment.phone)}</td>
+          <td>${escapeHtml(appointment.doctor || "Sin asignar")}</td>
+          <td>${escapeHtml(appointment.office || "Sin asignar")}</td>
+          <td><div class="appointment-actions">
+            <a class="whatsapp-button" href="https://wa.me/${whatsappNumber(appointment.phone)}" target="_blank" rel="noopener" aria-label="Abrir WhatsApp con ${escapeHtml(appointment.patient)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.56 15.18L2 22l4.95-1.3A10 10 0 1 0 12 2Zm0 18.18a8.15 8.15 0 0 1-4.15-1.13l-.3-.18-2.94.77.79-2.87-.2-.3A8.18 8.18 0 1 1 12 20.18Zm4.48-6.14c-.25-.13-1.48-.73-1.71-.81-.23-.09-.4-.13-.56.13-.17.25-.65.81-.8.98-.15.17-.3.19-.55.06-.25-.13-1.05-.39-2-1.25-.74-.66-1.24-1.48-1.38-1.73-.15-.25-.02-.38.11-.51.11-.11.25-.3.38-.45.12-.15.16-.26.25-.43.08-.17.04-.32-.02-.45-.06-.13-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.45.06-.68.32-.23.25-.9.88-.9 2.15 0 1.26.92 2.49 1.05 2.66.13.17 1.8 2.75 4.36 3.86.61.26 1.09.42 1.46.54.61.19 1.17.16 1.61.1.49-.07 1.48-.6 1.69-1.18.21-.58.21-1.08.15-1.18-.06-.11-.23-.17-.48-.3Z"/></svg>WhatsApp</a>
+            <button class="history-button" type="button" data-history-appointment="${appointment.id}">Historial</button>
+            <button class="secondary" type="button" data-edit-appointment="${appointment.id}">Modificar</button>
+            <button class="danger" type="button" data-delete-appointment="${appointment.id}">Eliminar</button>
+          </div></td>
+        </tr>
+      `).join("");
+
+      appointmentsBody.querySelectorAll("[data-edit-appointment]").forEach(button => {
+        button.addEventListener("click", () => startAppointmentEdit(button.dataset.editAppointment));
+      });
+      appointmentsBody.querySelectorAll("[data-delete-appointment]").forEach(button => {
+        button.addEventListener("click", () => deleteAppointment(button.dataset.deleteAppointment));
+      });
+      appointmentsBody.querySelectorAll("[data-history-appointment]").forEach(button => {
+        button.addEventListener("click", () => openHistory(button.dataset.historyAppointment));
+      });
+    }
+
+    function formatRecordDate(dateString) {
+      return new Date(dateString).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" });
+    }
+
+    function openHistory(id) {
+      const appointment = appointments.find(item => item.id === id);
+      if (!appointment) return;
+      historyAppointmentId = id;
+      historyPatient.textContent = `${appointment.patient} · ${appointment.phone}`;
+      historyText.value = "";
+      historyType.value = "Llamada";
+      renderHistory();
+      historyModal.classList.add("visible");
+      historyText.focus();
+    }
+
+    function closeHistoryModal() {
+      historyAppointmentId = null;
+      historyModal.classList.remove("visible");
+    }
+
+    function renderHistory() {
+      const appointment = appointments.find(item => item.id === historyAppointmentId);
+      const now = new Date();
+      historyDateTime.textContent = `Fecha y hora del registro: ${formatRecordDate(now.toISOString())}`;
+      const records = [...(appointment?.history || [])].sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+      historyList.innerHTML = records.length ? records.map(record => `
+        <article class="history-entry">
+          <strong>${escapeHtml(record.type)} · ${formatRecordDate(record.dateTime)}</strong>
+          <p>${escapeHtml(record.text)}</p>
+        </article>
+      `).join("") : `<div class="empty-table">Aún no hay llamadas o citas registradas para este paciente.</div>`;
+    }
+
+    function startAppointmentEdit(id) {
+      const appointment = appointments.find(item => item.id === id);
+      if (!appointment) return;
+      editingAppointmentId = id;
+      patientName.value = appointment.patient;
+      appointmentDate.value = appointment.date;
+      appointmentTime.value = appointment.time;
+      patientPhone.value = appointment.phone;
+      appointmentDoctor.value = appointment.doctor || "";
+      appointmentOffice.value = appointment.office || "";
+      appointmentSubmit.textContent = "Actualizar cita";
+      cancelEdit.classList.add("visible");
+      patientName.focus();
+      appointmentForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function resetAppointmentForm() {
+      editingAppointmentId = null;
+      appointmentForm.reset();
+      appointmentSubmit.textContent = "Guardar cita";
+      cancelEdit.classList.remove("visible");
+    }
+
+    function deleteAppointment(id) {
+      const appointment = appointments.find(item => item.id === id);
+      if (!appointment || !confirm(`¿Eliminar la cita de ${appointment.patient}?`)) return;
+      appointments = appointments.filter(item => item.id !== id);
+      saveAppointments();
+      if (editingAppointmentId === id) resetAppointmentForm();
+      render();
+    }
+
+    function checkAppointmentAlerts() {
+      const tomorrow = new Date();
+      tomorrow.setHours(0, 0, 0, 0);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+      const dueTomorrow = appointments.filter(item => item.date === tomorrowKey);
+
+      if (!dueTomorrow.length) {
+        appointmentAlert.classList.remove("visible");
+        appointmentAlert.textContent = "";
+        return;
+      }
+
+      appointmentAlert.innerHTML = `<strong>Recordatorio:</strong> mañana tienes ${dueTomorrow.length} cita${dueTomorrow.length === 1 ? "" : "s"}: ${dueTomorrow.map(item => `${escapeHtml(item.patient)} a las ${escapeHtml(item.time)}`).join(", ")}.`;
+      appointmentAlert.classList.add("visible");
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        const noticeKey = `avisos_citas_${tomorrowKey}`;
+        if (localStorage.getItem(noticeKey) !== "1") {
+          new Notification("Citas de mañana", { body: dueTomorrow.map(item => `${item.patient} - ${item.time}`).join("; ") });
+          localStorage.setItem(noticeKey, "1");
+        }
+      }
+    }
+
+    appointmentForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const data = {
+        patient: patientName.value.trim(),
+        date: appointmentDate.value,
+        time: appointmentTime.value,
+        phone: patientPhone.value.trim(),
+        doctor: appointmentDoctor.value.trim(),
+        office: appointmentOffice.value.trim()
+      };
+      if (!data.patient || !data.date || !data.time || !data.phone || !data.doctor || !data.office) return;
+
+      if (editingAppointmentId) {
+        const appointment = appointments.find(item => item.id === editingAppointmentId);
+        if (appointment) Object.assign(appointment, data);
+      } else {
+        appointments.push({ id: createId(), ...data });
+      }
+      saveAppointments();
+      resetAppointmentForm();
+      render();
+    });
+
+    cancelEdit.addEventListener("click", resetAppointmentForm);
+
+    historyForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const appointment = appointments.find(item => item.id === historyAppointmentId);
+      const text = historyText.value.trim();
+      if (!appointment || !text) return;
+      appointment.history = Array.isArray(appointment.history) ? appointment.history : [];
+      appointment.history.push({
+        id: createId(),
+        type: historyType.value,
+        text,
+        dateTime: new Date().toISOString()
+      });
+      saveAppointments();
+      historyText.value = "";
+      renderHistory();
+    });
+
+    closeHistory.addEventListener("click", closeHistoryModal);
+    historyModal.addEventListener("click", event => {
+      if (event.target === historyModal) closeHistoryModal();
+    });
+
+    dailyDate.addEventListener("change", renderDailyAppointments);
+
+    notificationButton.addEventListener("click", async () => {
+      if (!("Notification" in window)) {
+        alert("Este navegador no permite avisos automáticos. El recordatorio aparecerá dentro del sistema.");
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      notificationButton.textContent = permission === "granted" ? "Avisos activados" : "Activar avisos";
+      if (permission === "granted") checkAppointmentAlerts();
+    });
+
+    if ("Notification" in window && Notification.permission === "granted") {
+      notificationButton.textContent = "Avisos activados";
+    }
+
+    render();
+    connectFirebase();
+  </script>
+</body>
+</html>
